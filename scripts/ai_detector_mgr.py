@@ -19,7 +19,9 @@ from darknet_ros_msgs.msg import BoundingBoxes
 from nepi_edge_sdk_base.save_cfg_if import SaveCfgIF
 from nepi_edge_sdk_base.save_data_if import SaveDataIF
 
-class DarknetRosMgr:
+
+
+class AIDetectorManager:
     NODE_NAME = "ai_detector_mgr"
     DARKNET_CFG_PATH = '/mnt/nepi_storage/ai_models/darknet_ros/'
     MIN_THRESHOLD = 0.001
@@ -173,8 +175,6 @@ class DarknetRosMgr:
             rospy.loginfo("Classifier unable to find default parameters... starting up with no classifier running")
 
     def __init__(self):
-        rospy.loginfo("Starting " + self.NODE_NAME + " Node")
-        rospy.init_node(self.NODE_NAME)
 
         # Try to obtain the path to Darknet models from the system_mgr
         try:
@@ -232,7 +232,11 @@ class DarknetRosMgr:
         self.save_data_if = SaveDataIF(['detection_bounding_boxes'])
         rospy.Subscriber('classifier/bounding_boxes', BoundingBoxes, self.boundingBoxesCallback)
 
-        rospy.spin()
+
+def main():
+    rospy.init_node("ai_detector_manager")
+    manager = AIDetectorManager()
+    rospy.spin()
 
 if __name__ == '__main__':
-	DarknetMgr = DarknetRosMgr()
+    main()
