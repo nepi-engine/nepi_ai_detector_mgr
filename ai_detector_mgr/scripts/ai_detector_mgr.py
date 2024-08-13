@@ -82,9 +82,6 @@ class AIDetectorManager:
         rospy.Subscriber('~stop_classifier', Empty, self.stopClassifierCb)
         rospy.Subscriber('~set_threshold', Float32, self.setThresholdCb) 
 
-        self.found_object_pub = rospy.Publisher('~found_object', ObjectCount, queue_size=1)
-        self.bounding_box_pub = rospy.Publisher('~bounding_boxes', BoundingBoxes, queue_size=1)
-
         # Setup config IF system
         self.save_cfg_if = SaveCfgIF(updateParamsCallback=self.setCurrentSettingsAsDefault, paramsModifiedCallback=self.updateFromParamServer)
 
@@ -257,23 +254,11 @@ class AIDetectorManager:
         rospy.loginfo("Launching Darknet ROS Process: " + str(launch_cmd_line))
         self.darknet_ros_process = subprocess.Popen(launch_cmd_line)
         self.darknet_set_threshold_pub = rospy.Publisher('nepi_darknet_ros/set_threshold', Float32, queue_size=1, latch=True) # Must match the node that gets launched by darknetStartClassifier()
-        # Setup Model Specific Node Subscribers
-        if not (None == self.darknet_found_object_sub):
-            self.darknet_found_object_sub.unregister()
-            self.darknet_found_object_sub = None
-            time.sleep(1)
-        self.darknet_found_object_sub = rospy.Subscriber('classifier/found_object', ObjectCount, self.darknetFoundObjectCb)
-
-        if not (None == self.darknet_bounding_boxes_sub):
-            self.darknet_bounding_boxes_sub.unregister()
-            self.darknet_bounding_boxes_sub = None
-            time.sleep(1)
-        self.darknet_bounding_boxes_sub = rospy.Subscriber('classifier/bounding_boxes', BoundingBoxes, self.darknetBoundingBoxesCb)
 
         # Setup Classifier Setup Tracking Progress
         self.classifier_state = ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_LOADING
         self.classifier_load_start_time = rospy.Time.now()        
-        self.darknet_update_sub = rospy.Subscriber('classifier/found_object', ObjectCount, self.darknetUpdateCb) # Resubscribe to found_object so that we know when the classifier is up and running again
+        self.darknet_update_sub = rospy.Subscriber('ai_detector_mgr/found_object', ObjectCount, self.darknetUpdateCb) # Resubscribe to found_object so that we know when the classifier is up and running again
             
 
     def stopDarknetClassifier(self):
@@ -299,11 +284,7 @@ class AIDetectorManager:
         if not (None == self.darknet_update_sub):
             self.darknet_update_sub.unregister()
 
-    def darknetFoundObjectCb(self, msg):
-        self.found_object_pub.publish(msg)
 
-    def darknetBoundingBoxesCb(self, msg):
-        self.bounding_box_pub.publish(msg)
         
 
 
