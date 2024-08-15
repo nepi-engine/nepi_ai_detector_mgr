@@ -155,15 +155,16 @@ class AIDetectorManager:
     def provideClassifierStatus(self, req):
         # Update the loading progress if necessary
         loading_progress = 0.0
-        if (self.classifier_state == ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_RUNNING):
-            loading_progress = 1.0
-        elif (self.classifier_state == ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_LOADING):
-            loading_elapsed_s = (rospy.Time.now() - self.classifier_load_start_time).to_sec()
-            estimated_load_time_s = self.FIXED_LOADING_START_UP_TIME_S + (self.classifier_dict[self.current_classifier]['size'] / self.ESTIMATED_WEIGHT_LOAD_RATE_BYTES_PER_SECOND)
-            if loading_elapsed_s > estimated_load_time_s:
-                loading_progress = 0.95 # Stall at 95%
-            else:
-                loading_progress = loading_elapsed_s / estimated_load_time_s
+        if self.current_classifier in self.classifier_dict.keys():
+            if (self.classifier_state == ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_RUNNING):
+                loading_progress = 1.0
+            elif (self.classifier_state == ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_LOADING):
+                loading_elapsed_s = (rospy.Time.now() - self.classifier_load_start_time).to_sec()
+                estimated_load_time_s = self.FIXED_LOADING_START_UP_TIME_S + (self.classifier_dict[self.current_classifier]['size'] / self.ESTIMATED_WEIGHT_LOAD_RATE_BYTES_PER_SECOND)
+                if loading_elapsed_s > estimated_load_time_s:
+                    loading_progress = 0.95 # Stall at 95%
+                else:
+                    loading_progress = loading_elapsed_s / estimated_load_time_s
         return [self.current_img_topic, self.current_classifier, str(self.current_classifier_classes), self.classifier_state, loading_progress, self.current_threshold]
    
 
@@ -175,16 +176,33 @@ class AIDetectorManager:
 
     def updateFromParamServer(self):
         try:
-            default_classifier = rospy.get_param('~default_classifier')
-            default_img_topic = rospy.get_param('~default_image')
-            default_threshold = rospy.get_param('~default_threshold')
-            if default_classifier != "None" and default_img_topic != "None":
-                rospy.loginfo("Classifier sleeping for 5 seconds to allow cameras to start")
-                rospy.sleep(5) # Let the cameras start up properly
-                rospy.loginfo('Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
-                self.darknetStartClassifier(default_classifier, default_img_topic, default_threshold)
+            default_classifier = rospy.get_param('~default_classifier',"None")
+            default_img_topic = rospy.get_param('~default_image',"None")
+            default_threshold = rospy.get_param('~default_threshold',0.3)
         except KeyError:
             rospy.loginfo("Classifier unable to find default parameters... starting up with no classifier running")
+            return 
+
+        if default_classifier in self.classifier_dict.keys():
+            self.current_classifier = default_classifier
+            self.current_classifier_classes = self.classifier_dict[default_classifier]['classes']
+            self.current_threshold = default_threshold
+            if default_classifier != "None" and default_img_topic != "None":
+                check_time = 0
+                sleep_time = 1
+                timeout_s = 20
+                rospy.loginfo("Will wait for " + str(timeout_s) + " seconds for image topic: " +  default_img_topic)
+                image_topic = nepi_ros.find_topic(default_img_topic)
+                while image_topic == "" and check_time < timeout_s:
+                    time.sleep(sleep_time)
+                    check_time += sleep_time
+                    image_topic = nepi_ros.find_topic(default_img_topic)
+                if check_time < timeout_s:
+                    rospy.loginfo('Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
+                    self.darknetStartClassifier(default_classifier, default_img_topic, default_threshold)
+                    self.current_img_topic = default_img_topic
+    
+
 
 
 
@@ -276,7 +294,7 @@ class AIDetectorManager:
             self.darknet_ros_process = None
         self.current_classifier = "None"
         self.current_img_topic = "None"
-        #self.current_threshold = 0.0
+        self.current_threshold = 0.3
 
     def darknetUpdateCb(self, msg):
         # Means that darknet is up and running
