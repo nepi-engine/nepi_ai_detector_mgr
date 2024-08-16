@@ -38,12 +38,6 @@ class AIDetectorManager:
     FIXED_LOADING_START_UP_TIME_S = 5.0 # Total guess
     ESTIMATED_WEIGHT_LOAD_RATE_BYTES_PER_SECOND = 16000000.0 # Very roughly empirical based on YOLOv3
 
-    # Initial 3D Targeting Settings
-    TARGET_BOX_REDUCTION_PERCENT=50 # Sets the percent of target box around center to use for range calc
-    TARGET_DEPTH_METERS=0.3 # Sets the depth filter around mean depth to use for range calc
-    TARGET_MIN_POINTS=10 # Sets the minimum number of valid points to consider for a valid range
-    FOV_VERT_DEG=70 # Camera Vertical Field of View (FOV)
-    FOV_HORZ_DEG=110 # Camera Horizontal Field of View (FOV)
 
     darknet_cfg_files = []
     classifier_dict = dict()
@@ -267,7 +261,7 @@ class AIDetectorManager:
             "ros_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config/ros.yaml"),
             "network_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config", classifier + ".yaml"),
             "input_img:=" + input_img,
-            "detection_threshold:=" + str(threshold)
+            "detection_threshold:=" + str(self.current_threshold)
         ]
         rospy.loginfo("Launching Darknet ROS Process: " + str(launch_cmd_line))
         self.darknet_ros_process = subprocess.Popen(launch_cmd_line)
@@ -294,7 +288,7 @@ class AIDetectorManager:
             self.darknet_ros_process = None
         self.current_classifier = "None"
         self.current_img_topic = "None"
-        self.current_threshold = 0.3
+        #self.current_threshold = 0.3
 
     def darknetUpdateCb(self, msg):
         # Means that darknet is up and running
