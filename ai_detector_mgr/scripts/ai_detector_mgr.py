@@ -261,7 +261,7 @@ class AIDetectorManager:
             "ros_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config/ros.yaml"),
             "network_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config", classifier + ".yaml"),
             "input_img:=" + input_img,
-            "detection_threshold:=" + str(self.current_threshold)
+            "detection_threshold:=" + str(threshold)
         ]
         rospy.loginfo("Launching Darknet ROS Process: " + str(launch_cmd_line))
         self.darknet_ros_process = subprocess.Popen(launch_cmd_line)
