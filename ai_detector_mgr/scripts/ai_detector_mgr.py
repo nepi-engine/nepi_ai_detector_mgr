@@ -88,6 +88,10 @@ class AIDetectorManager:
         classifier=classifier_selection_msg.classifier
         input_img=classifier_selection_msg.img_topic
         threshold=classifier_selection_msg.detection_threshold
+        self.startClassifier(classifier, input_img, threshold)
+
+
+    def startClassifier(self, classifier, input_img, threshold)
         # Check that the requested topic exists and has the expected type
         all_topics = rospy.get_published_topics()
         found_topic = False
@@ -174,27 +178,29 @@ class AIDetectorManager:
             default_img_topic = rospy.get_param('~default_image',"None")
             default_threshold = rospy.get_param('~default_threshold',0.3)
         except KeyError:
-            rospy.loginfo("Classifier unable to find default parameters... starting up with no classifier running")
+            rospy.loginfo("AI_MGR: Classifier unable to find default parameters... starting up with no classifier running")
             return 
 
         if default_classifier in self.classifier_dict.keys():
             self.current_classifier = default_classifier
             self.current_classifier_classes = self.classifier_dict[default_classifier]['classes']
             self.current_threshold = default_threshold
-            if default_classifier != "None" and default_img_topic != "None":
+            if default_classifier != "None":
+                if default_img_topic != "None":
                 check_time = 0
                 sleep_time = 1
                 timeout_s = 20
-                rospy.loginfo("Will wait for " + str(timeout_s) + " seconds for image topic: " +  default_img_topic)
+                rospy.loginfo("AI_MGR: Will wait for " + str(timeout_s) + " seconds for image topic: " +  default_img_topic)
                 image_topic = nepi_ros.find_topic(default_img_topic)
                 while image_topic == "" and check_time < timeout_s:
                     time.sleep(sleep_time)
                     check_time += sleep_time
                     image_topic = nepi_ros.find_topic(default_img_topic)
                 if check_time < timeout_s:
-                    rospy.loginfo('Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
-                    self.darknetStartClassifier(default_classifier, default_img_topic, default_threshold)
+                    rospy.loginfo('AI_MGR: AI_MGR: Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
                     self.current_img_topic = default_img_topic
+                    self.startClassifier(default_classifier, default_img_topic, default_threshold)
+
     
 
 
@@ -263,7 +269,7 @@ class AIDetectorManager:
             "input_img:=" + input_img,
             "detection_threshold:=" + str(threshold)
         ]
-        rospy.loginfo("Launching Darknet ROS Process: " + str(launch_cmd_line))
+        rospy.loginfo("AI_MGR: Launching Darknet ROS Process: " + str(launch_cmd_line))
         self.darknet_ros_process = subprocess.Popen(launch_cmd_line)
         self.darknet_set_threshold_pub = rospy.Publisher('nepi_darknet_ros/set_threshold', Float32, queue_size=1, latch=True) # Must match the node that gets launched by darknetStartClassifier()
 
@@ -274,7 +280,7 @@ class AIDetectorManager:
             
 
     def stopDarknetClassifier(self):
-        rospy.loginfo("Stopping classifier")
+        rospy.loginfo("AI_MGR: Stopping classifier")
         if not (None == self.darknet_update_sub):
             self.darknet_update_sub.unregister()
         if not (None == self.darknet_found_object_sub):
