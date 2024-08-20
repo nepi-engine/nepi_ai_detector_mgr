@@ -91,7 +91,7 @@ class AIDetectorManager:
         self.startClassifier(classifier, input_img, threshold)
 
 
-    def startClassifier(self, classifier, input_img, threshold)
+    def startClassifier(self, classifier, input_img, threshold):
         # Check that the requested topic exists and has the expected type
         all_topics = rospy.get_published_topics()
         found_topic = False
@@ -187,19 +187,19 @@ class AIDetectorManager:
             self.current_threshold = default_threshold
             if default_classifier != "None":
                 if default_img_topic != "None":
-                check_time = 0
-                sleep_time = 1
-                timeout_s = 20
-                rospy.loginfo("AI_MGR: Will wait for " + str(timeout_s) + " seconds for image topic: " +  default_img_topic)
-                image_topic = nepi_ros.find_topic(default_img_topic)
-                while image_topic == "" and check_time < timeout_s:
-                    time.sleep(sleep_time)
-                    check_time += sleep_time
+                    check_time = 0
+                    sleep_time = 1
+                    timeout_s = 20
+                    rospy.loginfo("AI_MGR: Will wait for " + str(timeout_s) + " seconds for image topic: " +  default_img_topic)
                     image_topic = nepi_ros.find_topic(default_img_topic)
-                if check_time < timeout_s:
-                    rospy.loginfo('AI_MGR: AI_MGR: Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
-                    self.current_img_topic = default_img_topic
-                    self.startClassifier(default_classifier, default_img_topic, default_threshold)
+                    while image_topic == "" and check_time < timeout_s:
+                        time.sleep(sleep_time)
+                        check_time += sleep_time
+                        image_topic = nepi_ros.find_topic(default_img_topic)
+                    if check_time < timeout_s:
+                        rospy.loginfo('AI_MGR: AI_MGR: Starting classifier with parameters [' + default_classifier + ', ' + default_img_topic + ', ' + str(default_threshold) + ']')
+                        self.current_img_topic = default_img_topic
+                        self.startClassifier(default_classifier, default_img_topic, default_threshold)
 
     
 
