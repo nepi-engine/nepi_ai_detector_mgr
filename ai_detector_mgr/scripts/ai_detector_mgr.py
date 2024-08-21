@@ -163,9 +163,9 @@ class AIDetectorManager:
                     loading_progress = 0.95 # Stall at 95%
                 else:
                     loading_progress = loading_elapsed_s / estimated_load_time_s
-        return [self.current_img_topic, self.current_classifier, str(self.current_classifier_classes), self.classifier_state, loading_progress, self.current_threshold]
-   
-
+        return [self.current_img_topic, self.current_classifier, str(self.current_classifier_classes), \
+                self.classifier_state, loading_progress, self.current_threshold, \
+                False,"",False,""]
     def setCurrentSettingsAsDefault(self):
         rospy.set_param('~default_classifier', self.current_classifier)
         rospy.set_param('~default_image', self.current_img_topic)
