@@ -126,7 +126,7 @@ class AIDetectorManager:
         model_type = self.classifier_dict[classifier]['type']
         if model_type == "Darknet":
             self.current_model_type = model_type
-            self.darknetStartClassifier(classifier=classifier_selection_msg.classifier, input_img=classifier_selection_msg.img_topic, threshold=classifier_selection_msg.detection_threshold)
+            self.darknetStartClassifier(classifier=self.current_classifier, input_img=self.current_img_topic, threshold=self.current_threshold)
             
 
     def stopClassifierCb(self, msg):
