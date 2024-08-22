@@ -46,6 +46,10 @@ class AIDetectorManager:
     current_classifier_classes = []
     current_model_type = "None"
     current_img_topic = "None"
+    has_depth_map = False
+    current_depth_map_topic = "None"
+    has_pointcloud = False
+    current_pointcloud_topic = "None"
     current_threshold = 0.3
     classifier_state = ImageClassifierStatusQueryResponse.CLASSIFIER_STATE_STOPPED
     classifier_load_start_time = None
@@ -102,6 +106,17 @@ class AIDetectorManager:
         if (False == found_topic):
             rospy.logerr("Topic %s is not a valid image topic -- not starting classifier", input_img)
             return
+            
+        # Check if image source has depth_map and pointcloud topics
+        depth_map_topic = input_img.rsplit("/")[0] + "/depth_map"
+        depth_map_topic = nepi_ros.find_topic(depth_map_topic)
+        if depth_map_topic == "":
+          depth_map_topic = "None"
+          
+        pointcloud_topic = input_img.rsplit("/")[0] + "/pointcloud"
+        pointcloud_topic = nepi_ros.find_topic(pointcloud_topic)
+        if pointcloud_topic == "":
+          pointcloud_topic = "None"
 
         # Validate the requested_detection threshold
         if (threshold < self.MIN_THRESHOLD or threshold > self.MAX_THRESHOLD):
@@ -126,7 +141,8 @@ class AIDetectorManager:
         model_type = self.classifier_dict[classifier]['type']
         if model_type == "Darknet":
             self.current_model_type = model_type
-            self.darknetStartClassifier(classifier=self.current_classifier, input_img=self.current_img_topic, threshold=self.current_threshold)
+            self.darknetStartClassifier(classifier=self.current_classifier, input_img=self.current_img_topic, threshold=self.current_threshold, \
+            				input_depth_map = depth_map_topic, input_pointcloud = pointcloud_topic)
             
 
     def stopClassifierCb(self, msg):
@@ -165,7 +181,9 @@ class AIDetectorManager:
                     loading_progress = loading_elapsed_s / estimated_load_time_s
         return [self.current_img_topic, self.current_classifier, str(self.current_classifier_classes), \
                 self.classifier_state, loading_progress, self.current_threshold, \
-                False,"",False,""]
+                self.has_depth_map,self.current_depth_map_topic,self.has_pointcloud,self.current_pointcloud_topic]
+                               
+                
     def setCurrentSettingsAsDefault(self):
         rospy.set_param('~default_classifier', self.current_classifier)
         rospy.set_param('~default_image', self.current_img_topic)
@@ -257,7 +275,7 @@ class AIDetectorManager:
         return classifier_name_list, classifier_size_list, classifier_classes_list
 
 
-    def darknetStartClassifier(self, classifier, input_img, threshold):
+    def darknetStartClassifier(self, classifier, input_img, threshold, input_depth_map = "None", input_pointcloud = "None"):
         # Build Darknet new classifier launch command
         launch_cmd_line = [
             "roslaunch", "nepi_darknet_ros", "darknet_ros.launch",
@@ -266,7 +284,7 @@ class AIDetectorManager:
             "yolo_config_path:=" + os.path.join(self.DARKNET_CFG_PATH, "yolo_network_config/cfg"),
             "ros_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config/ros.yaml"),
             "network_param_file:=" + os.path.join(self.DARKNET_CFG_PATH, "config", classifier + ".yaml"),
-            "input_img:=" + input_img,
+            "input_img:=" + input_img, "input_depth_map:=" + input_depth_map, "input_pointcloud:=" + input_pointcloud,
             "detection_threshold:=" + str(threshold)
         ]
         rospy.loginfo("AI_MGR: Launching Darknet ROS Process: " + str(launch_cmd_line))
