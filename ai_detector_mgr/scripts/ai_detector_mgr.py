@@ -24,7 +24,6 @@ from nepi_ros_interfaces.msg import BoundingBoxes, ObjectCount,ClassifierSelecti
 
 
 from nepi_edge_sdk_base.save_cfg_if import SaveCfgIF
-from nepi_edge_sdk_base.save_data_if import SaveDataIF
 
 
 
