@@ -45,9 +45,12 @@ class ROSAiNodeIF:
 
     def __init__( getBoundingBoxesDictFunction, classes_list, self,source_image_topic
                  ):
+                 
         node_name = rospy.get_name()
-        rospy.loginfo(node_name + ": Starting AI Node IF setup")
-
+        rospy.loginfo(node_name + ": Starting IF setup")
+        # Create a node msg publisher
+        self.msg_pub = rospy.Publisher("~messages", String, queue_size=1)
+        time.sleep(1)
 
         # getBoundingBoxesListFunction
         # Returns list of bounding box dictionaries for each detection, 
@@ -107,14 +110,22 @@ class ROSAiNodeIF:
         BOUNDING_BOXES_TOPIC = NEPI_BASE_NAMESPACE + "ai_detector_mgr/bounding_boxes"
         self.bounding_boxes_pub = rospy.Publisher(BOUNDING_BOXES_TOPIC, BoundingBoxes, queue_size = 1)
 
-        #DETECTION_IMAGE_TOPIC = NEPI_BASE_NAMESPACE + "ai_detector_mgr/detection_image"
-        #self.detection_image_pub = rospy.Publisher(DETECTION_IMAGE_TOPIC, Image,  queue_size = 1)
+        DETECTION_IMAGE_TOPIC = NEPI_BASE_NAMESPACE + "ai_detector_mgr/detection_image"
+        self.detection_image_pub = rospy.Publisher(DETECTION_IMAGE_TOPIC, Image,  queue_size = 1)
 
         # Create AI Node Processes       
         check_interval_sec = float(1)/self.CHECK_RATE
         rospy.Timer(rospy.Duration(check_interval_sec), self.detectionCheckCb)
-
-        rospy.loginfo(node_name + ":Initialization Complete")
+        	
+        self.publishMsg("Initialization Complete")
+        
+        
+    def publishMsg(self,msg):
+      msg_str = (self.node_name + ": " + str(msg))
+      rospy.loginfo(msg_str)
+      if self.msg_pub.getNumSubscribers() > 0:
+        self.msg_pub.publish(msg_str)
+        
 
     ###############################################################################################
   
